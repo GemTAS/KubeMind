@@ -1,0 +1,1 @@
+"""KubeMind Backend — Auth package."""
