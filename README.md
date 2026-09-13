@@ -228,7 +228,6 @@ cd kubernetes/kind
 bash setup.sh
 ```
 
-See [`docs/development/getting-started.md`](docs/development/getting-started.md) for detailed instructions.
 
 ---
 
