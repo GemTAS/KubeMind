@@ -1,1 +1,0 @@
-"""KubeMind Backend — Clusters package."""
