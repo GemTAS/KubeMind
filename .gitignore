@@ -112,7 +112,7 @@ frontend/
 # ---- docs ---- 
 docs/api/
 docs/database/
-docs/develpment/
+docs/development/
 docs/architecture/modern-ai-models.md
 docs/architecture/high-level-design.md
 docs/architecture/low-level-design.md
