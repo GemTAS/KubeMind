@@ -107,7 +107,6 @@ frontend/
 # ----  ---- 
 .editorconfig
 *.yml
-.env.example
 
 # ---- docs ---- 
 docs/api/
