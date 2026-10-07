@@ -41,11 +41,11 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
 
-    # ---- JWT ----
-    jwt_secret_key: str = "change-this-to-a-secure-random-string"
-    jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = 30
-    jwt_refresh_token_expire_days: int = 7
+    # ---- Supabase Auth ----
+    supabase_url: str = Field(default="", alias="supabase_url")
+    supabase_anon_key: str = Field(default="", alias="supabase_anon_key")
+    supabase_jwt_secret: str | None = Field(default=None, alias="supabase_jwt_secret")
+    supabase_jwt_algorithm: str = "HS256"
 
     # ---- CORS ----
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]

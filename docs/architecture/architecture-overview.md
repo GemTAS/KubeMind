@@ -184,14 +184,15 @@ graph TB
         OTEL["OpenTelemetry & Jaeger (Traces)"]
     end
 
-    subgraph DATA["Data Layer"]
-        SUPABASE["☁️ Supabase (Cloud PostgreSQL)<br/>Primary Database (0 MB Local RAM)"]
+    subgraph DATA["Data & Identity Layer"]
+        SUPABASE["☁️ Supabase (Cloud Auth & PostgreSQL)<br/>Built-in Auth + Database (0 MB Local RAM)"]
         REDIS_C["Redis (Optional)<br/>Cache & Task Queues"]
     end
 
-    FE <-->|REST / WebSocket| BE
+    FE <-->|Supabase Auth & Session| SUPABASE
+    FE <-->|REST / WebSocket (Bearer Token)| BE
     BE <--> AI
-    BE -->|SQLAlchemy / asyncpg| SUPABASE
+    BE -->|Token Validation & Database| SUPABASE
     BE -.->|Optional Cache| REDIS_C
     AI -->|Model Metadata & Logs| SUPABASE
     AI -->|Execute Decisions| K8S_CORE
