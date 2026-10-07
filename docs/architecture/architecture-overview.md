@@ -136,7 +136,7 @@ graph LR
     style G fill:#ec4899,stroke:#db2777,color:#fff
 ```
 
-### Telemetry Pipeline (Why Kafka is Removed)
+### Compromise in Telemetry Pipeline
 Previous drafts included Apache Kafka for event streaming. In KubeMind, Kafka was removed to eliminate unnecessary overhead and JVM memory footprint (1+ GB). 
 
 Telemetry streams directly through:
@@ -186,7 +186,7 @@ graph TB
 
     subgraph DATA["Data Layer"]
         SUPABASE["☁️ Supabase (Cloud PostgreSQL)<br/>Primary Database (0 MB Local RAM)"]
-        REDIS_C["Redis (Optional — Phase 2)<br/>Cache & Task Queues"]
+        REDIS_C["Redis (Optional)<br/>Cache & Task Queues"]
     end
 
     FE <-->|REST / WebSocket| BE
@@ -213,7 +213,7 @@ graph TB
 
 ## 4. Local Development Architecture
 
-The development architecture is tailored to operate reliably across varying hardware profiles, specifically safeguarding low-RAM machines (e.g., 4 GB RAM laptops) from WSL2 out-of-memory crashes.
+The development architecture is tailored to operate reliably across varying hardware profiles, specifically safeguarding low-RAM machines from WSL2 out-of-memory crashes.
 
 ```
 Windows Host
