@@ -5,6 +5,7 @@ All settings are loaded from environment variables via Pydantic Settings.
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # ---- Application ----
@@ -25,14 +27,17 @@ class Settings(BaseSettings):
     backend_port: int = 8000
     backend_log_level: str = "info"
 
-    # ---- Database ----
+    # ---- Database (Supabase Managed PostgreSQL or Local PostgreSQL) ----
+    database_url_env: str | None = Field(default=None, alias="database_url")
+
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "kubemind"
     postgres_user: str = "kubemind"
     postgres_password: str = "changeme"
 
-    # ---- Redis ----
+    # ---- Redis (Optional - Phase 2) ----
+    redis_enabled: bool = False
     redis_host: str = "localhost"
     redis_port: int = 6379
 
@@ -47,7 +52,14 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        """Async PostgreSQL connection URL."""
+        """Async PostgreSQL connection URL (supports Supabase or local Postgres)."""
+        if self.database_url_env:
+            url = self.database_url_env
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -56,6 +68,13 @@ class Settings(BaseSettings):
     @property
     def database_url_sync(self) -> str:
         """Sync PostgreSQL connection URL (for Alembic migrations)."""
+        if self.database_url_env:
+            url = self.database_url_env
+            if url.startswith("postgresql+asyncpg://"):
+                url = url.replace("postgresql+asyncpg://", "postgresql://", 1)
+            elif url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            return url
         return (
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"

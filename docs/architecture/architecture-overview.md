@@ -1,54 +1,132 @@
 # KubeMind — Architecture Overview
 
-## System Context
+## 1. Overall System Architecture & Hierarchy
 
-KubeMind sits as an **AI decision layer** between developers/operators and the Kubernetes execution layer. It transforms the standard reactive Kubernetes workflow into an intelligent, predictive loop.
+KubeMind is an **autonomous AI-powered Kubernetes cloud operations platform**. It sits strictly **above** Kubernetes as an intelligent decision and control layer.
+
+Kubernetes remains the execution and orchestration layer, while KubeMind provides observation, predictive analytics, intelligent scheduling, autoscaling, and remediation decisions.
+
+```
+                    KubeMind
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+       Frontend                 Backend
+       React/Vite               FastAPI
+          │                         │
+          └────────────┬────────────┘
+                       │
+                KubeMind AI Engine
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+       Observe       Predict      Decide
+          │            │            │
+          └────────────┼────────────┘
+                       │
+                       ▼
+                  Kubernetes
+                       │
+              ┌────────┴────────┐
+              │                 │
+          Application       Monitoring
+           Workloads          Stack
+```
 
 ```mermaid
 graph TB
-    DEV["👨‍💻 Developer"] -->|Push Code| GH["GitHub Repository"]
-    GH -->|Trigger| CICD["GitHub Actions<br/>Build + Test + Scan"]
-    CICD -->|Push Image| CR["Container Registry"]
-    CR -->|Deploy Request| KM["🧠 KubeMind AI<br/>Decision Engine"]
+    subgraph KM["🧠 KubeMind (Intelligent Decision Layer)"]
+        direction TB
+        subgraph KM_CORE["User & API Plane"]
+            FE["Frontend<br/>React + Vite"]
+            BE["Backend<br/>FastAPI"]
+        end
+        subgraph KM_AI["KubeMind AI Engine"]
+            OBS_M["Observe"]
+            PRED_M["Predict"]
+            DEC_M["Decide"]
+        end
+        FE <--> BE
+        BE <--> KM_AI
+    end
 
-    KM -->|Optimized Decision| K8S["☸️ Kubernetes API"]
-    K8S --> W1["Worker Node 1"]
-    K8S --> W2["Worker Node 2"]
-    K8S --> W3["Worker Node 3"]
+    subgraph K8S["☸️ Kubernetes (Execution & Orchestration Layer)"]
+        direction TB
+        subgraph APP["Application Workloads"]
+            PODS["Microservice Pods<br/>Deployments / Services"]
+        end
+        subgraph MON["Monitoring Stack"]
+            PROM["Prometheus"]
+            OTEL["OpenTelemetry"]
+            LOKI["Loki"]
+            GRAF["Grafana"]
+            JAEGER["Jaeger"]
+        end
+    end
 
-    W1 -->|Telemetry| OBS["📊 Observability Layer"]
-    W2 -->|Telemetry| OBS
-    W3 -->|Telemetry| OBS
+    KM_AI -->|Actions: Schedule / Scale / Heal| K8S
+    MON -->|Telemetry: Metrics / Logs / Traces| KM_AI
 
-    OBS -->|Metrics| PROM["Prometheus"]
-    OBS -->|Logs| LOKI["Loki"]
-    OBS -->|Traces| OT["OpenTelemetry / Jaeger"]
-
-    PROM -->|Feed| KM
-    LOKI -->|Feed| KM
-    OT -->|Feed| KM
-
-    style KM fill:#6366f1,stroke:#4f46e5,color:#fff
-    style K8S fill:#326ce5,stroke:#2563eb,color:#fff
-    style OBS fill:#059669,stroke:#047857,color:#fff
+    style KM fill:#f8fafc,stroke:#4f46e5,stroke-width:2px
+    style KM_CORE fill:#ede9fe,stroke:#6366f1
+    style KM_AI fill:#e0e7ff,stroke:#4f46e5
+    style K8S fill:#f0fdf4,stroke:#059669,stroke-width:2px
+    style APP fill:#dcfce7,stroke:#10b981
+    style MON fill:#dbeafe,stroke:#2563eb
 ```
 
 ---
 
-## Core Decision Loop
+## 2. The KubeMind Closed-Loop Intelligence Flow
 
-KubeMind operates on a continuous intelligence loop:
+KubeMind is not simply a passive monitoring dashboard for Kubernetes. It operates as an **autonomous, closed-loop decision engine** that continuously observes cluster telemetry, understands anomalies, predicts future trajectory, acts through Kubernetes APIs, and learns from results:
+
+```
+Kubernetes
+    │
+    ▼
+Observe
+(Prometheus / OpenTelemetry / Logs / Events)
+    │
+    ▼
+Understand
+(RCA / Feature Extraction)
+    │
+    ▼
+Predict
+(Workload / Failure / Resource Demand)
+    │
+    ▼
+Decide
+(AI Scheduler / Autoscaling / Optimization)
+    │
+    ▼
+Act
+(Kubernetes API / Controllers)
+    │
+    ▼
+Measure
+    │
+    ▼
+Learn
+(Feedback / RL)
+    │
+    └──────────────► Improve AI Engine
+```
 
 ```mermaid
 graph LR
-    A["OBSERVE<br/>Collect metrics,<br/>logs, traces"] --> B["UNDERSTAND<br/>Process and<br/>correlate data"]
-    B --> C["PREDICT<br/>Forecast workload,<br/>failures, costs"]
-    C --> D["DECIDE<br/>Select optimal<br/>action"]
-    D --> E["ACT<br/>Execute via<br/>Kubernetes"]
-    E --> F["MEASURE<br/>Compare prediction<br/>vs reality"]
-    F --> G["LEARN<br/>Update models,<br/>reduce error"]
-    G --> A
+    K8S["☸️ Kubernetes Cluster"] --> A["1. OBSERVE<br/>Prometheus, OTel,<br/>Logs & Events"]
+    A --> B["2. UNDERSTAND<br/>RCA, Topology &<br/>Feature Extraction"]
+    B --> C["3. PREDICT<br/>Workload, Failure &<br/>Resource Demand"]
+    C --> D["4. DECIDE<br/>AI Scheduler, Autoscaling<br/>& Cost Optimization"]
+    D --> E["5. ACT<br/>Kubernetes API &<br/>Custom Controllers"]
+    E --> F["6. MEASURE<br/>Observe impact vs.<br/>predicted target"]
+    F --> G["7. LEARN<br/>Feedback tracking &<br/>RL model refinement"]
+    G -->|Continuous Improvement| C
+    E -->|State Mutation| K8S
 
+    style K8S fill:#326ce5,stroke:#1d4ed8,color:#fff
     style A fill:#0ea5e9,stroke:#0284c7,color:#fff
     style B fill:#8b5cf6,stroke:#7c3aed,color:#fff
     style C fill:#f59e0b,stroke:#d97706,color:#fff
@@ -58,215 +136,198 @@ graph LR
     style G fill:#ec4899,stroke:#db2777,color:#fff
 ```
 
+### Telemetry Pipeline (Why Kafka is Removed)
+Previous drafts included Apache Kafka for event streaming. In KubeMind, Kafka was removed to eliminate unnecessary overhead and JVM memory footprint (1+ GB). 
+
+Telemetry streams directly through:
+$$\text{Kubernetes} \xrightarrow{\text{Scrape/Export}} \text{Prometheus / OpenTelemetry} \xrightarrow{\text{PromQL / HTTP Ingestion}} \text{FastAPI} \xrightarrow{\text{Inference}} \text{AI Engine}$$
+
+This provides sub-second latency for AI decision-making with minimal system resource consumption.
+
 ---
 
-## Component Architecture
-
-### Platform Layer
+## 3. Component Architecture
 
 ```mermaid
 graph TB
-    subgraph Platform["KubeMind Platform"]
+    subgraph Platform["KubeMind Platform Layer"]
         direction TB
-        subgraph FE["Frontend — React Dashboard"]
+        subgraph FE["Frontend (React + Vite)"]
             UI["Dashboard UI"]
-            VIZ["AI Visualization"]
-            MGMT["Management Console"]
+            VIZ["AI Visualization & XAI"]
+            MGMT["Cluster Management Console"]
         end
 
-        subgraph BE["Backend — FastAPI"]
-            AUTH["Auth Service"]
+        subgraph BE["Backend (FastAPI)"]
+            AUTH["Auth & RBAC Service"]
             CLUSTER["Cluster Service"]
-            APP["Application Service"]
+            APP["Application Lifecycle Service"]
             AI_API["AI Decision API"]
-            AUDIT_SVC["Audit Service"]
+            AUDIT_SVC["Audit Trail Service"]
         end
 
-        subgraph AI["AI Engine — Python"]
+        subgraph AI["AI Engine (Python / Scikit-learn / XGBoost / PyTorch)"]
             WP["Workload Predictor"]
             FP["Failure Predictor"]
-            SCHED["Intelligent Scheduler"]
+            SCHED["AI Node Scoring Scheduler"]
             COST["Cost Optimizer"]
-            XAI_MOD["Explainability Module"]
-            RL["Reinforcement Learning"]
+            XAI_MOD["TreeSHAP Explainability Module"]
+            RL["Reinforcement Learning Optimizer"]
         end
     end
 
-    subgraph INFRA["Infrastructure"]
-        K8S["Kubernetes Cluster"]
-        PROM["Prometheus"]
-        GRAF["Grafana"]
-        LOKI_C["Loki"]
-        OTEL["OpenTelemetry"]
+    subgraph INFRA["Kubernetes Execution Layer"]
+        K8S_CORE["Kind / Cloud Kubernetes Cluster"]
+        PROM["Prometheus (Metrics)"]
+        GRAF["Grafana (Dashboards)"]
+        LOKI_C["Loki (Logs)"]
+        OTEL["OpenTelemetry & Jaeger (Traces)"]
     end
 
     subgraph DATA["Data Layer"]
-        PG["PostgreSQL"]
-        REDIS_C["Redis"]
-        KAFKA_C["Kafka"]
+        SUPABASE["☁️ Supabase (Cloud PostgreSQL)<br/>Primary Database (0 MB Local RAM)"]
+        REDIS_C["Redis (Optional — Phase 2)<br/>Cache & Task Queues"]
     end
 
-    FE --> BE
-    BE --> AI
-    BE --> DATA
-    AI --> DATA
-    AI --> K8S
-    BE --> K8S
-    K8S --> INFRA
-    INFRA --> AI
+    FE <-->|REST / WebSocket| BE
+    BE <--> AI
+    BE -->|SQLAlchemy / asyncpg| SUPABASE
+    BE -.->|Optional Cache| REDIS_C
+    AI -->|Model Metadata & Logs| SUPABASE
+    AI -->|Execute Decisions| K8S_CORE
+    BE -->|K8s Python Client| K8S_CORE
+    K8S_CORE --> INFRA
+    INFRA -->|Direct Metrics & Telemetry| BE
+    INFRA -->|Real-time Ingestion| AI
 
-    style Platform fill:#f8fafc,stroke:#e2e8f0
+    style Platform fill:#f8fafc,stroke:#cbd5e1
     style FE fill:#dbeafe,stroke:#93c5fd
     style BE fill:#fef3c7,stroke:#fcd34d
     style AI fill:#ede9fe,stroke:#c4b5fd
     style INFRA fill:#d1fae5,stroke:#6ee7b7
     style DATA fill:#fee2e2,stroke:#fca5a5
+    style SUPABASE fill:#dcfce7,stroke:#16a34a,stroke-width:2px
 ```
 
 ---
 
-## Data Flow
+## 4. Local Development Architecture
 
-### Deployment Flow
-
-```mermaid
-sequenceDiagram
-    actor Dev as Developer
-    participant GH as GitHub
-    participant CI as GitHub Actions
-    participant CR as Container Registry
-    participant KM as KubeMind AI
-    participant K8S as Kubernetes
-
-    Dev->>GH: Push code
-    GH->>CI: Trigger pipeline
-    CI->>CI: Build + Test + Scan
-    CI->>CR: Push Docker image
-    Dev->>KM: Deploy request
-    KM->>KM: Analyze cluster state
-    KM->>KM: Predict workload
-    KM->>KM: Calculate risk score
-    KM->>KM: Score candidate nodes
-    KM->>K8S: Deploy with optimal placement
-    K8S-->>KM: Deployment status
-    KM-->>Dev: Deployment result + AI explanation
-```
-
-### Feedback Loop
-
-```mermaid
-sequenceDiagram
-    participant AI as AI Model
-    participant K8S as Kubernetes
-    participant OBS as Observability
-    participant FB as Feedback Engine
-
-    AI->>K8S: Decision (e.g., scale to 5 replicas)
-    K8S->>OBS: Runtime telemetry
-    OBS->>FB: Actual metrics
-    AI->>FB: Predicted metrics
-    FB->>FB: Calculate prediction error
-    FB->>AI: Feedback for retraining
-    Note over AI,FB: Prediction error decreases over time
-```
-
----
-
-## Module Interaction Map
-
-```mermaid
-graph TB
-    subgraph INPUT["Data Sources"]
-        METRICS["Infrastructure Metrics<br/>CPU, Memory, Disk, Network"]
-        APP_MET["Application Metrics<br/>Request Rate, Latency, Errors"]
-        K8S_EVT["Kubernetes Events<br/>Restarts, Scheduling, Failures"]
-        LOGS["Logs<br/>Application + System"]
-        TRACES["Traces<br/>Distributed Request Paths"]
-    end
-
-    subgraph AI_ENGINE["AI Decision Engine"]
-        WP2["Workload Prediction"]
-        FP2["Failure Prediction"]
-        AD["Anomaly Detection"]
-        DE["Decision Engine"]
-    end
-
-    subgraph ACTIONS["Actions"]
-        SCALE["Scale"]
-        SCHEDULE["Schedule"]
-        REMEDIATE["Remediate"]
-        ROLLBACK["Rollback"]
-        ALERT["Alert"]
-    end
-
-    INPUT --> AI_ENGINE
-    WP2 --> DE
-    FP2 --> DE
-    AD --> DE
-    DE --> ACTIONS
-    ACTIONS -->|Telemetry| INPUT
-
-    style INPUT fill:#dbeafe,stroke:#93c5fd
-    style AI_ENGINE fill:#ede9fe,stroke:#c4b5fd
-    style ACTIONS fill:#d1fae5,stroke:#6ee7b7
-```
-
----
-
-## Deployment Topology
-
-### Local Development
+The development architecture is tailored to operate reliably across varying hardware profiles, specifically safeguarding low-RAM machines (e.g., 4 GB RAM laptops) from WSL2 out-of-memory crashes.
 
 ```
 Windows Host
 │
-├── Docker Desktop
-│   ├── PostgreSQL (port 5432)
-│   ├── Redis (port 6379)
-│   └── Kafka (port 9092)
-│
-└── WSL2 Ubuntu
-    ├── Kind Cluster
-    │   ├── Control Plane
-    │   ├── Worker Node 1
-    │   ├── Worker Node 2
-    │   └── Worker Node 3
+└── Docker Desktop
     │
-    ├── Backend (FastAPI — port 8000)
-    └── Frontend (Vite — port 5173)
+    └── WSL2 Ubuntu
+        │
+        ├── Kind Kubernetes Cluster
+        │   ├── Control Plane
+        │   └── Worker Node(s)
+        │
+        ├── FastAPI Backend
+        │   └── Port 8000
+        │
+        └── React/Vite Frontend
+            └── Port 5173
+
+KubeMind Backend
+        │
+        ▼
+    Supabase (Cloud Managed)
+        │
+        ▼
+    PostgreSQL
 ```
 
-### Production (Future)
+### Resource Allocation Strategy
 
-```
-Cloud Provider (EKS / GKE / AKS)
-│
-├── KubeMind Namespace
-│   ├── Backend Pods
-│   ├── AI Engine Pods
-│   └── Frontend Pods (Nginx)
-│
-├── Application Namespace
-│   ├── Microservice Pods
-│   └── Database Pods
-│
-├── Monitoring Namespace
-│   ├── Prometheus
-│   ├── Grafana
-│   ├── Loki
-│   └── Jaeger
-│
-└── GitOps
-    └── Argo CD
-```
+| Component | 4 GB RAM Machine (Developer) | 8 GB+ RAM Machine (Teammate) |
+|---|---|---|
+| **Database** | **Supabase (Cloud PostgreSQL)** — 0 MB local RAM | Supabase or Local Docker PostgreSQL |
+| **Kind Cluster** | **Single Node** or **1 Control Plane + 1 Worker** | **Multi-Node** (1 Control Plane + 3 Workers) |
+| **Redis** | Optional / Disabled for Phase 1 | Optional |
+| **Kafka** | **Removed** (saves 1+ GB JVM RAM) | **Removed** |
+| **Workloads** | Backend & Frontend dev, lightweight inference | Scheduler experiments, failure injection, benchmarking |
 
 ---
 
-## Key Design Principles
+## 5. Production & GitOps Architecture
 
-1. **Kubernetes remains the execution layer** — KubeMind never replaces K8s, it enhances it.
-2. **AI decisions are explainable** — Every decision includes inputs, reasoning, confidence.
-3. **Feedback drives improvement** — Prediction vs reality is always measured.
-4. **Start simple, grow complex** — Linear Regression before Reinforcement Learning.
-5. **Real data over synthetic** — Collect actual telemetry whenever possible.
-6. **Modular architecture** — Each AI module is independently deployable and testable.
+In production, KubeMind integrates with GitOps via Argo CD, and maintains clean separation between cluster compute, application workloads, and persistence.
+
+### Key Architectural Rule: Managed External Database
+The production PostgreSQL database is **not** hosted inside the Kubernetes `application` or `kubemind` namespace. Utilizing managed PostgreSQL (Supabase or AWS RDS / Google Cloud SQL) provides automated backups, HA, and separates storage lifecycle from ephemeral container lifecycles.
+
+### GitOps Flow with Argo CD
+Argo CD is placed inside the Kubernetes cluster in its dedicated `argocd` namespace. Git is the single source of truth:
+
+```
+GitHub
+   │
+   │ Git push (PR merge)
+   ▼
+Argo CD (argocd namespace)
+   │
+   │ Automated Reconciliation & Sync
+   ▼
+Kubernetes Cluster
+```
+
+### Production Topology
+
+```
+                       GitHub (Source of Truth)
+                                  │
+                                  ▼
+                               Argo CD
+                                  │
+                                  ▼
+                      Cloud Kubernetes Cluster
+                                  │
+        ┌─────────────────────────┼─────────────────────────┐
+        │                         │                         │
+        ▼                         ▼                         ▼
+  argocd Namespace        kubemind Namespace       application Namespace
+        │                         │                         │
+   Argo CD Server          ┌──────┼──────┐             Workload Pods
+   Argo CD Controller      │      │      │          (Microservices)
+                        Frontend Backend AI
+                                         Engine
+                                  │
+                                  ▼
+                        monitoring Namespace
+                                  │
+                         ┌────────┼────────┐
+                         │        │        │
+                     Prometheus Grafana  Loki
+                                  │
+                                  ▼
+                                Jaeger
+
+                                  │
+                                  ▼
+                    Supabase / Managed Cloud
+                           PostgreSQL
+```
+
+### Namespace Breakdown
+
+| Namespace | Components | Responsibility |
+|---|---|---|
+| `argocd` | Argo CD Server, Repo Server, Application Controller | Continuous GitOps reconciliation against GitHub manifests |
+| `kubemind` | KubeMind React Frontend (Nginx), FastAPI Backend, AI Engine Controller | Autonomous decision plane and operator interface |
+| `application` | User microservices, deployments, canary pods | Monitored and managed application workloads |
+| `monitoring` | Prometheus, Grafana, Loki, OpenTelemetry Collector, Jaeger | Full-stack cluster and application telemetry |
+| *(External Cloud)* | **Supabase / Managed PostgreSQL** | Persistent state: users, clusters, decisions, audit logs, metrics |
+
+---
+
+## 6. Key Design Principles
+
+1. **Kubernetes Remains the Execution Layer**: KubeMind never attempts to replace the Kubernetes API or controllers; it acts as an intelligent decision and optimization layer on top.
+2. **Autonomous Closed-Loop Intelligence**: Observe → Understand → Predict → Decide → Act → Measure → Learn.
+3. **Low-Overhead Architecture**: Lean, purpose-built components (direct Prometheus/OTel streaming over heavy message brokers like Kafka; cloud-managed database like Supabase over local heavy DB engines).
+4. **Explainable AI (XAI)**: Every scheduling, scaling, and healing decision produces human-readable explanations, feature attribution (SHAP), and confidence scores.
+5. **GitOps as Source of Truth**: Argo CD in-cluster reconciles cluster configuration continuously from version control.

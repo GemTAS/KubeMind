@@ -43,25 +43,43 @@ Instead of relying solely on predefined thresholds and policies, KubeMind contin
 
 ## 🏗️ Architecture
 
+KubeMind operates as the **intelligent decision and control layer** positioned strictly above the Kubernetes execution layer:
+
 ```
-Developer → GitHub → CI/CD → Container Registry
-                                     ↓
-                            ┌────────────────┐
-                            │  KubeMind AI   │
-                            │  Decision      │
-                            │  Engine        │
-                            └───────┬────────┘
-                                    ↓
-                             Kubernetes API
-                                    ↓
-                    ┌───────────────┼───────────────┐
-                    ↓               ↓               ↓
-                 Node 1          Node 2          Node 3
-                    ↓               ↓               ↓
-               Prometheus      Loki          OpenTelemetry
-                    └───────────────┼───────────────┘
-                                    ↓
-                           Feedback → KubeMind
+                    KubeMind
+                       │
+          ┌────────────┴────────────┐
+          │                         │
+       Frontend                 Backend
+       React/Vite               FastAPI
+          │                         │
+          └────────────┬────────────┘
+                       │
+                KubeMind AI Engine
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+       Observe       Predict      Decide
+          │            │            │
+          └────────────┼────────────┘
+                       │
+                       ▼
+                  Kubernetes
+                       │
+              ┌────────┴────────┐
+              │                 │
+          Application       Monitoring
+           Workloads          Stack
+```
+
+### The Autonomous Intelligence Loop
+
+KubeMind is not simply a monitoring dashboard; it is an autonomous closed-loop control system:
+
+```
+Kubernetes ──► Observe ──► Understand ──► Predict ──► Decide ──► Act ──► Measure ──► Learn ──► Improve AI Engine
+     ▲                                                                                              │
+     └──────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -124,14 +142,13 @@ Developer → GitHub → CI/CD → Container Registry
 - **OpenTelemetry** — Telemetry collection
 - **Jaeger** — Distributed tracing
 
-### Data & Messaging
-- **PostgreSQL** — Primary database
-- **Redis** — Caching and sessions
-- **Apache Kafka** — Event streaming
+### Data & Persistence
+- **Supabase / PostgreSQL** — Primary database (cloud-managed for zero local RAM usage)
+- **Redis** — Optional caching and task queues (Phase 2)
 
 ### CI/CD & GitOps
 - **GitHub Actions** — CI/CD pipelines
-- **Argo CD** — GitOps deployment
+- **Argo CD** — GitOps continuous reconciliation (in-cluster `argocd` namespace)
 
 ### Security
 - **Keycloak** — Identity management (future)
@@ -207,8 +224,11 @@ KubeMind/
 git clone https://github.com/<your-org>/KubeMind.git
 cd KubeMind
 
-# Start infrastructure (PostgreSQL, Redis)
-docker compose up -d
+# Set up environment variables (point to Supabase or use local fallback)
+cp .env.example .env
+
+# Optional: Start local fallback infrastructure (not needed if using Supabase!)
+docker compose up -d postgres
 
 # Backend
 cd backend
@@ -223,7 +243,7 @@ cd frontend
 npm install
 npm run dev
 
-# Kubernetes (in WSL2)
+# Kubernetes (in WSL2: 1 Control Plane + 1 Worker for 4GB PC, or multi-worker)
 cd kubernetes/kind
 bash setup.sh
 ```
